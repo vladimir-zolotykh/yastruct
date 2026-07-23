@@ -24,7 +24,11 @@ def get_bbox(polygons: list[PolygonType] = POLYGONS) -> BboxType:
     return ((x1, y1), (x2, y2))
 
 
-class Header:
+class SchemaMeta(type):
+    pass
+
+
+class Header(metaclass=SchemaMeta):
     __schema__ = (
         ("magic", "<i"),
         ("x1", "d"),
