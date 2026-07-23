@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 from typing import BinaryIO, Self
+import os
 from itertools import chain
 import struct
 
@@ -120,6 +121,21 @@ def test_header():
     with open("header.dat", "rb") as f:
         h2 = Header.from_file(f)
     assert h == h2
+
+
+def test_polygons():
+    if not os.path.exists("header.dat"):
+        (x1, y1), (x2, y2) = get_bbox()
+        h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
+        with open("header.dat", "wb") as f:
+            f.write(h.pack())
+    with open("polygons.dat", "wb") as f:
+        if not os.path.exists("polygons.dat"):
+            write_polygons(f)
+        for _ in range(h.num_polygons):
+            polygon = Polygon.from_file(f)
+            for p in polygon:
+                print(p)
 
 
 if __name__ == "__main__":
