@@ -24,11 +24,27 @@ def get_bbox(polygons: list[PolygonType] = POLYGONS) -> BboxType:
     return ((x1, y1), (x2, y2))
 
 
+class Header:
+    def __init__(self, magic, x1, y1, x2, y2, num_polygons):
+        self.magic = magic
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.num_polygons = num_polygons
+
+    def pack(self) -> bytes:
+        return struct.pack(
+            "<iddddi", self.magic, self.x1, self.y1, self.x2, self.y2, self.num_polygons
+        )
+
+
 def write_header(f: BinaryIO) -> None:
-    pass
+    (x1, y1), (x2, y2) = get_bbox()
+    h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
+    f.write(h.pack())
 
 
 if __name__ == "__main__":
     with open("header.dat", "wb") as f:
-        print(get_bbox())
-        # write_header(f)
+        write_header(f)
