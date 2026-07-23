@@ -24,27 +24,49 @@ def get_bbox(polygons: list[PolygonType] = POLYGONS) -> BboxType:
     return ((x1, y1), (x2, y2))
 
 
+def get_schema_specs(schema) -> tuple[str, list[str]]:
+    format: str = ""
+    names: list[str] = []
+    for name, fmt in schema:
+        format += fmt
+        names.append(name)
+    return format, names
+
+
 class SchemaMeta(type):
-    pass
+    def __new__(mcls, name, bases, ns):
+        format, schema_names = get_schema_specs(ns.get("__schema__", []))
+
+        args = ", ".join(schema_names)
+        src = f"def __init__(self, {args}):\n"
+        for sname in schema_names:
+            src += f"    self.{sname} = {sname}\n"
+        tmp = {}
+        exec(src, {}, tmp)
+        ns["__init__"] = tmp["__init__"]
+
+        def pack(self) -> bytes:
+            values = (getattr(self, a) for a in schema_names)
+            return struct.pack(format, *values)
+
+        @classmethod
+        def from_file(cls, f: BinaryIO) -> Self:
+            return cls(*struct.unpack(format, f.read(struct.calcsize(format))))
+
+        ns["pack"] = pack
+        ns["from_file"] = from_file
+        return super().__new__(mcls, name, bases, ns)
 
 
 class Header(metaclass=SchemaMeta):
     __schema__ = (
         ("magic", "<i"),
         ("x1", "d"),
-        "y1",
-        "x2",
-        "y2",
+        ("y1", "d"),
+        ("x2", "d"),
+        ("y2", "d"),
         ("num_polygons", "i"),
     )
-
-    def __init__(self, magic, x1, y1, x2, y2, num_polygons):
-        self.magic = magic
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.num_polygons = num_polygons
 
     def __eq__(self, other) -> bool:
         return (
@@ -52,15 +74,6 @@ class Header(metaclass=SchemaMeta):
             if isinstance(other, type(self))
             else NotImplemented
         )
-
-    def pack(self) -> bytes:
-        return struct.pack(
-            "<iddddi", self.magic, self.x1, self.y1, self.x2, self.y2, self.num_polygons
-        )
-
-    @classmethod
-    def from_file(cls, f: BinaryIO) -> Self:
-        return cls(*struct.unpack("<iddddi", f.read(40)))
 
     def __repr__(self):
         args = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
