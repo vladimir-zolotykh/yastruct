@@ -80,11 +80,16 @@ class Header(metaclass=SchemaMeta):
         args = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f"Header({args})"
 
+    @classmethod
+    def expected(cls) -> Self:
+        (x1, y1), (x2, y2) = get_bbox()
+        return Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
 
-def write_header(f: BinaryIO) -> None:
-    (x1, y1), (x2, y2) = get_bbox()
-    h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
-    f.write(h.pack())
+
+def write_header(path: str) -> None:
+    with open(path, "wb") as f:
+        h: Header = Header.expected()
+        f.write(h.pack())
 
 
 def write_polygons(f: BinaryIO, polygons: list[PolygonType] = POLYGONS) -> None:
@@ -114,23 +119,15 @@ class Polygon:
 
 
 def test_header():
-    (x1, y1), (x2, y2) = get_bbox()
-    h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
-    with open("header.dat", "wb") as f:
-        f.write(h.pack())
+    if not os.path.exists("header.dat"):
+        write_header("header.dat")
     with open("header.dat", "rb") as f:
-        h2 = Header.from_file(f)
-    assert h == h2
+        h = Header.from_file(f)
+    assert Header.expected() == h
 
 
 def test_polygons():
-    if not os.path.exists("header.dat"):
-        (x1, y1), (x2, y2) = get_bbox()
-        h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
-        with open("header.dat", "wb") as f:
-            f.write(h.pack())
-    with open("header.dat", "rb") as f:
-        h = Header.from_file(f)
+    h: Header = Header.expected()
     if not os.path.exists("polygons.dat"):
         with open("polygons.dat", "wb") as f:
             write_polygons(f)
