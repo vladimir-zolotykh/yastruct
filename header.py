@@ -25,6 +25,15 @@ def get_bbox(polygons: list[PolygonType] = POLYGONS) -> BboxType:
 
 
 class Header:
+    __schema__ = (
+        ("magic", "<i"),
+        ("x1", "d"),
+        "y1",
+        "x2",
+        "y2",
+        ("num_polygons", "i"),
+    )
+
     def __init__(self, magic, x1, y1, x2, y2, num_polygons):
         self.magic = magic
         self.x1 = x1
