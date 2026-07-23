@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-from typing import BinaryIO
+from typing import BinaryIO, Self
 from itertools import chain
 import struct
 
@@ -38,6 +38,10 @@ class Header:
             "<iddddi", self.magic, self.x1, self.y1, self.x2, self.y2, self.num_polygons
         )
 
+    @classmethod
+    def from_file(cls, f: BinaryIO) -> Self:
+        cls(*struct.unpack("<iddddi", f.read(40)))
+
 
 def write_header(f: BinaryIO) -> None:
     (x1, y1), (x2, y2) = get_bbox()
@@ -46,5 +50,10 @@ def write_header(f: BinaryIO) -> None:
 
 
 if __name__ == "__main__":
+    (x1, y1), (x2, y2) = get_bbox()
+    h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
     with open("header.dat", "wb") as f:
-        write_header(f)
+        f.write(h.pack())
+    with open("header.dat", "rb") as f:
+        h2 = Header.from_file(f)
+    assert h == h2
