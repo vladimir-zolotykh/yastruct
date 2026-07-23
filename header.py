@@ -88,9 +88,9 @@ def write_header(f: BinaryIO) -> None:
 
 
 def write_polygons(f: BinaryIO, polygons: list[PolygonType] = POLYGONS) -> None:
+    _I = struct.Struct("<i")
+    _DD = struct.Struct("<dd")
     for polygon in polygons:
-        _I = struct.Struct("<i")
-        _DD = struct.Struct("<dd")
         sz = _I.size + len(polygon) * _DD.size
         f.write(struct.pack(_I.format, sz))
         for p in polygon:
@@ -129,10 +129,12 @@ def test_polygons():
         h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
         with open("header.dat", "wb") as f:
             f.write(h.pack())
+    with open("header.dat", "rb") as f:
+        h = Header.from_file(f)
     if not os.path.exists("polygons.dat"):
         with open("polygons.dat", "wb") as f:
             write_polygons(f)
-    with open("polygons.dat", "wb") as f:
+    with open("polygons.dat", "rb") as f:
         for _ in range(h.num_polygons):
             polygon = Polygon.from_file(f)
             for p in polygon:
