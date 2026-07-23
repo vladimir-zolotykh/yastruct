@@ -86,7 +86,33 @@ def write_header(f: BinaryIO) -> None:
     f.write(h.pack())
 
 
-if __name__ == "__main__":
+def write_polygons(f: BinaryIO, polygons: list[PolygonType] = POLYGONS) -> None:
+    for polygon in polygons:
+        _I = struct.Struct("<i")
+        _DD = struct.Struct("<dd")
+        sz = _I.size + len(polygon) * _DD.size
+        f.write(struct.pack(_I.format, sz))
+        for p in polygon:
+            f.write(_DD.pack(*p))
+
+
+class Polygon:
+    def __init__(self, bytesdata: bytes | memoryview):
+        self.view = memoryview(bytesdata)
+
+    @classmethod
+    def from_file(cls, f: BinaryIO) -> Self:
+        (sz,) = struct.unpack("<i", f.read(struct.calcsize("<i")))
+        return cls(f.read(sz - struct.calcsize("<i")))
+
+    def __iter__(self):
+        _DD = struct.Struct("<dd")
+        for off in range(0, len(self.view), _DD.size):
+            sl = slice(off, off + _DD.size)
+            yield _DD.unpack_from(self.view[sl])
+
+
+def test_header():
     (x1, y1), (x2, y2) = get_bbox()
     h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
     with open("header.dat", "wb") as f:
@@ -94,3 +120,7 @@ if __name__ == "__main__":
     with open("header.dat", "rb") as f:
         h2 = Header.from_file(f)
     assert h == h2
+
+
+if __name__ == "__main__":
+    test_header()
