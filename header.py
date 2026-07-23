@@ -129,9 +129,10 @@ def test_polygons():
         h = Header(0x1234, x1, y1, x2, y2, len(POLYGONS))
         with open("header.dat", "wb") as f:
             f.write(h.pack())
-    with open("polygons.dat", "wb") as f:
-        if not os.path.exists("polygons.dat"):
+    if not os.path.exists("polygons.dat"):
+        with open("polygons.dat", "wb") as f:
             write_polygons(f)
+    with open("polygons.dat", "wb") as f:
         for _ in range(h.num_polygons):
             polygon = Polygon.from_file(f)
             for p in polygon:
@@ -140,3 +141,4 @@ def test_polygons():
 
 if __name__ == "__main__":
     test_header()
+    test_polygons()
