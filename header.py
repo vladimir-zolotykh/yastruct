@@ -33,6 +33,13 @@ class Header:
         self.y2 = y2
         self.num_polygons = num_polygons
 
+    def __eq__(self, other) -> bool:
+        return (
+            self.__dict__ == other.__dict__
+            if isinstance(other, type(self))
+            else NotImplemented
+        )
+
     def pack(self) -> bytes:
         return struct.pack(
             "<iddddi", self.magic, self.x1, self.y1, self.x2, self.y2, self.num_polygons
@@ -40,7 +47,11 @@ class Header:
 
     @classmethod
     def from_file(cls, f: BinaryIO) -> Self:
-        cls(*struct.unpack("<iddddi", f.read(40)))
+        return cls(*struct.unpack("<iddddi", f.read(40)))
+
+    def __repr__(self):
+        args = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"Header({args})"
 
 
 def write_header(f: BinaryIO) -> None:
