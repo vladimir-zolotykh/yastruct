@@ -118,13 +118,13 @@ class Header(View):
         return h
 
 
-FIELDMETA_DAT = ".fieldmeta.dat"
+HEADER_DAT = ".header.dat"
 
 if __name__ == "__main__":
-    if Path(FIELDMETA_DAT).exists():
-        h = Header.from_file(FIELDMETA_DAT)
+    if Path(HEADER_DAT).exists():
+        h = Header.from_file(HEADER_DAT)
         print(h.num_polygons)
     else:
         h = Header.expected()
-        h.write(FIELDMETA_DAT)
-        print(f"{FIELDMETA_DAT} has written")
+        h.write(HEADER_DAT)
+        print(f"{HEADER_DAT} has written")
