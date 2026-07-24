@@ -17,6 +17,14 @@ class Field:
     def drop(self, instance, value):
         raise NotImplementedError
 
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return self.fetch(instance)
+
+    def __set__(self, instance, value):
+        self.drop(instance, value)
+
 
 class FieldStr(Field):
     def __init__(self, offset, fmt):
@@ -55,21 +63,20 @@ class FieldMeta(type):
             if key[:2] == "__" and key[-2:] == "__":
                 continue
             if isinstance(val, str):
-                ns[key] = FieldStr(val, off)
+                ns[key] = FieldStr(off, val)
                 off += struct.calcsize(val)
             elif isinstance(val, FieldMeta):
-                ns[key] = FieldType(val, off)
+                ns[key] = FieldType(off, val)
                 off += val._size
             else:
                 pass
             fields.append(key)
-            off += struct.calcsize(val)
         ns["_size"] = off
         ns["_fields"] = fields
         return super().__new__(mcls, name, bases, ns)
 
 
-class View:
+class View(metaclass=FieldMeta):
     def __init__(self, bytesdata: bytes | memoryview):
         self.view = memoryview(bytesdata)
 
@@ -84,7 +91,7 @@ class View:
     @classmethod
     def from_file(cls, path: str) -> Self:
         with open(path, "rb") as f:
-            return cls(f.read(cls.VIEW_SIZE))
+            return cls(f.read(cls._size))
 
 
 class Point(View):
@@ -111,13 +118,13 @@ class Header(View):
         return h
 
 
-SCHEMA_DAT = ".schema.dat"
+FIELDMETA_DAT = ".fieldmeta.dat"
 
 if __name__ == "__main__":
-    if Path(SCHEMA_DAT).exists():
-        h = Header.from_file(SCHEMA_DAT)
-        print(h)
+    if Path(FIELDMETA_DAT).exists():
+        h = Header.from_file(FIELDMETA_DAT)
+        print(h.num_polygons)
     else:
         h = Header.expected()
-        h.write(SCHEMA_DAT)
-        print(f"{SCHEMA_DAT} has written")
+        h.write(FIELDMETA_DAT)
+        print(f"{FIELDMETA_DAT} has written")
