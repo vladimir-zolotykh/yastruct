@@ -1,6 +1,6 @@
 .emacs.desktop*
 REF/
-specs.dat
+.specs.dat
 header.dat
 polygons.bin
 polygons.dat

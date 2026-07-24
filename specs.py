@@ -59,10 +59,13 @@ class Header(View):
         return h
 
 
+SPECS_DAT = ".specs.dat"
+
 if __name__ == "__main__":
-    if Path("specs.dat").exists():
-        h = Header.from_file("specs.dat")
+    if Path(SPECS_DAT).exists():
+        h = Header.from_file(SPECS_DAT)
         print(h)
     else:
         h = Header.expected()
-        h.write("specs.dat")
+        h.write(SPECS_DAT)
+        print(f"{SPECS_DAT} has written")
