@@ -41,14 +41,23 @@ class View:
 
 
 class Header(View):
-    VIEW_SIZE = 40
+    OFF = 0
+    _I = struct.Struct("<i")
+    _D = struct.Struct("<d")
     __schema__ = ["magic", "x1", "y1", "x2", "y2", "num_polygons"]
-    magic = Field("<i", 0)
-    x1 = Field("<d", 4)
-    y1 = Field("<d", 4 + 8)
-    x2 = Field("<d", 4 + 8 + 8)
-    y2 = Field("<d", 4 + 8 + 8 + 8)
-    num_polygons = Field("<i", 4 + 8 + 8 + 8 + 8)
+    magic = Field("<i", OFF)
+    OFF += _I.size
+    x1 = Field("<d", OFF)
+    OFF += _D.size
+    y1 = Field("<d", OFF)
+    OFF += _D.size
+    x2 = Field("<d", OFF)
+    OFF += _D.size
+    y2 = Field("<d", OFF)
+    OFF += _D.size
+    num_polygons = Field("<i", OFF)
+    OFF += _I.size
+    VIEW_SIZE = OFF
 
     @classmethod
     def expected(cls) -> Self:
