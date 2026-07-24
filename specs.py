@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
+from typing import Self
 import struct
 from header import get_bbox, POLYGONS
 
@@ -28,8 +29,18 @@ class View:
         args = ", ".join(f"{getattr(self, name)!r}" for name in self.__schema__)
         return f"{type(self).__name__}({args})"
 
+    def write(self, path: str):
+        with open(path, "wb") as f:
+            f.write(self.view)
+
+    @classmethod
+    def from_file(cls, path: str) -> Self:
+        with open(path, "rb") as f:
+            return cls(f.read(cls.VIEW_SIZE))
+
 
 class Header(View):
+    VIEW_SIZE = 40
     __schema__ = ["magic", "x1", "y1", "x2", "y2", "num_polygons"]
     magic = Field("<i", 0)
     x1 = Field("<d", 4)
@@ -41,11 +52,13 @@ class Header(View):
 
 if __name__ == "__main__":
     (x1, y1), (x2, y2) = get_bbox(POLYGONS)
-    h = Header(bytearray(40))
-    h.magic = 0x1234
-    h.x1 = x1
-    h.y1 = y1
-    h.x2 = x2
-    h.y2 = y2
-    h.num_polygons = len(POLYGONS)
+    # h = Header(bytearray(40))
+    h = Header.from_file("specs.dat")
+    # h.magic = 0x1234
+    # h.x1 = x1
+    # h.y1 = y1
+    # h.x2 = x2
+    # h.y2 = y2
+    # h.num_polygons = len(POLYGONS)
     print(h)
+    # h.write("specs.dat")
