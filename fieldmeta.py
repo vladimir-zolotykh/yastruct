@@ -65,12 +65,13 @@ class FieldMeta(type):
             if isinstance(val, str):
                 ns[key] = FieldStr(off, val)
                 off += struct.calcsize(val)
+                fields.append(key)
             elif isinstance(val, FieldMeta):
                 ns[key] = FieldType(off, val)
                 off += val._size
+                fields.append(key)
             else:
                 pass
-            fields.append(key)
         ns["_size"] = off
         ns["_fields"] = fields
         return super().__new__(mcls, name, bases, ns)
@@ -123,7 +124,7 @@ HEADER_DAT = ".header.dat"
 if __name__ == "__main__":
     if Path(HEADER_DAT).exists():
         h = Header.from_file(HEADER_DAT)
-        print(h.num_polygons)
+        print(h)
     else:
         h = Header.expected()
         h.write(HEADER_DAT)
