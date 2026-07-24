@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 from typing import Self
+from pathlib import Path
 import struct
 from header import get_bbox, POLYGONS
 
@@ -49,16 +50,19 @@ class Header(View):
     y2 = Field("<d", 4 + 8 + 8 + 8)
     num_polygons = Field("<i", 4 + 8 + 8 + 8 + 8)
 
+    @classmethod
+    def expected(cls) -> Self:
+        h = cls(bytearray(cls.VIEW_SIZE))
+        h.magic = 0x1234
+        (h.x1, h.y1), (h.x2, h.y2) = get_bbox(POLYGONS)
+        h.num_polygons = len(POLYGONS)
+        return h
+
 
 if __name__ == "__main__":
-    (x1, y1), (x2, y2) = get_bbox(POLYGONS)
-    # h = Header(bytearray(40))
-    h = Header.from_file("specs.dat")
-    # h.magic = 0x1234
-    # h.x1 = x1
-    # h.y1 = y1
-    # h.x2 = x2
-    # h.y2 = y2
-    # h.num_polygons = len(POLYGONS)
-    print(h)
-    # h.write("specs.dat")
+    if Path("specs.dat").exists():
+        h = Header.from_file("specs.dat")
+        print(h)
+    else:
+        h = Header.expected()
+        h.write("specs.dat")
