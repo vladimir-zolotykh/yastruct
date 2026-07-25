@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-from typing import Self
+from typing import Self, Any
+from functools import singledispatch
 from pathlib import Path
 import struct
 from itertools import chain
@@ -61,21 +62,36 @@ class FieldType(Field):
 
 
 class FieldMeta(type):
+
     def __new__(mcls, name, bases, ns):
         off = 0
         fields = []
+
         for key, val in ns.items():
+
+            @singledispatch
+            def add_field(val, off):
+                return None, None
+
+            @add_field.register
+            def _(val: str, off: int) -> tuple[FieldStr, int]:
+                return FieldStr(off, val), struct.calcsize(val)
+
+            @add_field.register
+            def _(val: FieldMeta, off: int) -> tuple[FieldType, int]:
+                return FieldType(off, val), val._size
+
+            @add_field.register
+            def _(val: Any, off: int) -> tuple[None, None]:
+                raise TypeError
+
             if key[:2] == "__" and key[-2:] == "__":
                 continue
-            if isinstance(val, str):
-                ns[key] = FieldStr(off, val)
-                off += struct.calcsize(val)
+            try:
+                x = add_field(val, off)
+                ns[key], off = x[0], (off + x[1])
                 fields.append(key)
-            elif isinstance(val, FieldMeta):
-                ns[key] = FieldType(off, val)
-                off += val._size
-                fields.append(key)
-            else:
+            except TypeError:
                 pass
         ns["_size"] = off
         ns["_fields"] = fields
