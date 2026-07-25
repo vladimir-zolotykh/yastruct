@@ -53,9 +53,7 @@ class FieldType(Field):
 
     def drop(self, instance, value):
         rng = slice(self.offset, self.offset + self.typ._size)
-        # value = ((0.5, 0.5), (7.0, 9.2))
-        # TypeError: a bytes-like object is required, not 'tuple'
-        if hasattr(value, "view"):
+        if isinstance(value, View):
             instance.view[rng] = value.view
         else:
             instance.view[rng] = value
