@@ -4,7 +4,8 @@
 from typing import Self
 from pathlib import Path
 import struct
-from header import get_bbox, POLYGONS
+from itertools import chain
+from header import POLYGONS, PolygonType
 
 
 class Field:
@@ -54,7 +55,10 @@ class FieldType(Field):
         rng = slice(self.offset, self.offset + self.typ._size)
         # value = ((0.5, 0.5), (7.0, 9.2))
         # TypeError: a bytes-like object is required, not 'tuple'
-        instance.view[rng] = value
+        if hasattr(value, "view"):
+            instance.view[rng] = value.view
+        else:
+            instance.view[rng] = value
 
 
 class FieldMeta(type):
@@ -101,10 +105,30 @@ class Point(View):
     x = "<d"
     y = "<d"
 
+    @classmethod
+    def from_bytes(cls, x: float, y: float) -> Self:
+        p = cls(bytearray(cls._size))
+        p.x, p.y = x, y
+        return p
+
 
 class Bbox(View):
     xy1 = Point
     xy2 = Point
+
+    @classmethod
+    def from_bytes(cls, xy1: Point, xy2: Point) -> Self:
+        bbox = cls(bytearray(cls._size))
+        bbox.xy1, bbox.xy2 = xy1, xy2
+        return bbox
+
+
+def get_bbox(polygons: list[PolygonType] = POLYGONS) -> Bbox:
+    x1 = min(x for x, _ in chain(*polygons))
+    y1 = min(y for _, y in chain(*polygons))
+    x2 = max(x for x, _ in chain(*polygons))
+    y2 = max(y for _, y in chain(*polygons))
+    return Bbox.from_bytes(Point.from_bytes(x1, y1), Point.from_bytes(x2, y2))
 
 
 class Header(View):
