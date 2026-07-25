@@ -51,8 +51,10 @@ class FieldType(Field):
         return self.typ(instance.view[rng])
 
     def drop(self, instance, value):
-        rng = slice(self.offset, self.offset + type(value)._size)
-        instance.view[rng] = value._view
+        rng = slice(self.offset, self.offset + self.typ._size)
+        # value = ((0.5, 0.5), (7.0, 9.2))
+        # TypeError: a bytes-like object is required, not 'tuple'
+        instance.view[rng] = value
 
 
 class FieldMeta(type):
