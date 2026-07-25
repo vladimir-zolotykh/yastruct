@@ -32,14 +32,16 @@ class FieldStr(Field):
         super().__init__(offset)
         self.fmt = fmt
 
+    @property
+    def _rng(self):
+        return slice(self.offset, self.offset + struct.calcsize(self.fmt))
+
     def fetch(self, instance, owner=None):
-        rng = slice(self.offset, self.offset + struct.calcsize(self.fmt))
-        t = struct.unpack_from(self.fmt, instance.view[rng])
+        t = struct.unpack_from(self.fmt, instance.view[self._rng])
         return t[0] if len(t) == 1 else t
 
     def drop(self, instance, value):
-        rng = slice(self.offset, self.offset + struct.calcsize(self.fmt))
-        instance.view[rng] = struct.pack(self.fmt, value)
+        instance.view[self._rng] = struct.pack(self.fmt, value)
 
 
 class FieldType(Field):
@@ -47,16 +49,15 @@ class FieldType(Field):
         super().__init__(offset)
         self.typ = typ
 
+    @property
+    def _rng(self):
+        return slice(self.offset, self.offset + self.typ._size)
+
     def fetch(self, instance):
-        rng = slice(self.offset, self.offset + self.typ._size)
-        return self.typ(instance.view[rng])
+        return self.typ(instance.view[self._rng])
 
     def drop(self, instance, value):
-        rng = slice(self.offset, self.offset + self.typ._size)
-        if isinstance(value, View):
-            instance.view[rng] = value.view
-        else:
-            instance.view[rng] = value
+        instance.view[self._rng] = value.view if isinstance(value, View) else value
 
 
 class FieldMeta(type):
