@@ -50,11 +50,16 @@ class MultiMeta(type):
 
 def trace_add(func):
     sig = inspect.signature(func)
-    types = (
-        parm.annotation.__name__
-        for name, parm in sig.parameters.items()
-        if name != "self"
-    )
+    types = []
+    for name, parm in sig.parameters.items():
+        x = ""
+        if name == "self":
+            continue
+        if parm.annotation != inspect._empty:
+            x += parm.annotation.__name__
+        if parm.default != inspect._empty:
+            x += f"<{parm.default}>"
+        types.append(x)
     suffix = "-".join(types)
 
     @wraps(func)
