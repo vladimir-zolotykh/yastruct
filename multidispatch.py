@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 import types
+from functools import wraps
 import inspect
 
 
@@ -47,19 +48,41 @@ class MultiMeta(type):
         return MultiDict()
 
 
+def trace_add(func):
+    sig = inspect.signature(func)
+    types = (
+        parm.annotation.__name__
+        for name, parm in sig.parameters.items()
+        if name != "self"
+    )
+    suffix = "-".join(types)
+
+    @wraps(func)
+    def wrappter(self, *args):
+        _args = f"{', '.join(str(a) for a in args)}"
+        res = func(self, *args)
+        print(f"{func.__name__}-{suffix}({_args})" f" -> {res}")
+        return res
+
+    return wrappter
+
+
 class Add(metaclass=MultiMeta):
+    @trace_add
     def add(self, x: int, y: int) -> int:
         return x + y
 
+    @trace_add
     def add(self, x: str, y: str) -> str:  # noqa: F811
         return x + "__" + y
 
+    @trace_add
     def add(self, x: float, y: float = 10.0) -> float:  # noqa: F811
         return x + y
 
 
 if __name__ == "__main__":
     a = Add()
-    print(a.add(10, 12))
-    print(a.add("as", "df"))
-    print(a.add(10.3))
+    a.add(10, 12)
+    a.add("as", "df")
+    a.add(10.3)
