@@ -60,6 +60,6 @@ class Add(metaclass=MultiMeta):
 
 if __name__ == "__main__":
     a = Add()
-    a.add(10, 12)
-    a.add("as", "df")
-    a.add(10.3)
+    print(a.add(10, 12))
+    print(a.add("as", "df"))
+    print(a.add(10.3))
